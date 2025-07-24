@@ -11,9 +11,10 @@ env:
   TF_INPUT: false
   AWS_REGION: us-east-1
   TFVARS_FILE: terraform.tfvars
-  ECR_REPO: devops-app
+  ECR_REPO: ${{ secrets.ECR_REPO_NAME }}
   IMAGE_TAG: latest
   AWS_ACCOUNT_ID: 553561694715
+  
 
 jobs:
   terraform:
