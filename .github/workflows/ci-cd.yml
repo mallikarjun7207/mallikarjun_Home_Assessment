@@ -20,12 +20,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Debug: Show current directory tree
+      - name: Debug: Show directory structure
         run: |
           echo "Working Directory: $PWD"
-          echo "Listing repo files:"
           ls -al
-          echo "Full recursive listing:"
           ls -R
 
       - name: Set up Terraform
@@ -49,7 +47,9 @@ jobs:
         run: terraform -chdir=terraform init
 
       - name: Terraform Format & Validate
-        run: terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate
+        run: |
+          terraform -chdir=terraform fmt -check
+          terraform -chdir=terraform validate
 
       - name: Terraform Plan
         run: terraform -chdir=terraform plan -var-file=${{ env.TFVARS_FILE }}
