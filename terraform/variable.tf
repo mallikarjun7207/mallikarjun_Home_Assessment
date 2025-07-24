@@ -55,7 +55,7 @@ variable "ecs_task_role_arn" {
 variable "environment" {
   description = "Deployment environment"
   type        = string
-  default     = "dev"
+ 
 }
 
 variable "container_port" {
@@ -113,9 +113,9 @@ variable "s3_versioning_enabled" {
 }
 
 variable "service_name" {
-  description = "ECS Service name"
+  description = "Name of the ECS service"
   type        = string
-  default     = "app-service"
+  
 }
 
 variable "tg_arn" {

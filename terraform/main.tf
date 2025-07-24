@@ -45,6 +45,7 @@ module "compute" {
   region                   = var.region
   target_group_arn         = module.network.target_group_arn
   environment              = var.environment
+  service_name             = var.service_name
   log_group_name           = "/ecs/${var.environment}-app"
   log_group_retention_days = 7
   db_secret_name           = module.secrets.db_secret_name
