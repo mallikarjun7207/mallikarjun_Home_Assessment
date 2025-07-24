@@ -1,2 +1,2 @@
-flask
-boto3
+Flask==2.3.3
+waitress==3.0.0
