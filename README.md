@@ -11,12 +11,12 @@ This repo contains a complete infrastructure-as-code deployment of a containeriz
 - **Secure Remote State**: S3 + DynamoDB backend
 - **Docker**: For packaging the Python app
 
-## CI/CD Workflow
+## CI/CD Workflow:
 - Triggered on every `push` to `main`
 - Builds and tests Python app
 - Applies Terraform with `terraform.tfvars`
 
-## Project Structure
+## Project Structure:
 
 ├── app/ # Flask application source code
 │ ├── main.py # Main application logic
@@ -55,7 +55,7 @@ This repo contains a complete infrastructure-as-code deployment of a containeriz
 | Monitoring           | AWS CloudWatch (Logs & Alarms)                                 |
 
 
-**INFRASTRUCTURED RESOURCE CREATED**
+**INFRASTRUCTURED RESOURCE CREATED**:
 
 VPC with public/private subnets, route tables, and Internet Gateway
 ECS Cluster with Fargate service and task definitions
@@ -66,7 +66,7 @@ CloudWatch Log Groups and a CPU Utilization Alarm
 IAM Roles for ECS execution and task access
 S3 bucket for static assets
 
-**CI/CD PIPELINE AUTOMATE THE FOLLOWING**
+**CI/CD PIPELINE AUTOMATE THE FOLLOWING**:
 
 Application build using Docker
 Infrastructure validation & provisioning using Terraform
@@ -74,56 +74,56 @@ Docker image push to Amazon ECR
 Deployment to AWS ECS Fargate
 Secrets are securely handled via GitHub Actions + AWS Secrets Manager
 
-**Secrets Management Strategy**
+**Secrets Management Strategy**:
 
 To manage application secrets such as the PostgreSQL database password, this project uses:
 AWS Secrets Manager for storing and rotating secrets
 Terraform to provision secrets securely and inject them into the ECS task definition as environment variables
 GitHub Secrets for secure pipeline access to infrastructure via AWS credentials and .tfvars injection
 
-**Why This Approach?**
+**Why This Approach?**:
 
 Secure: Secrets are not hardcoded and are stored encrypted in AWS Secrets Manager
 Least Privilege: IAM roles restrict access to secrets only for the ECS task
 Scalable: Can handle additional secrets like API keys or tokens easily
 CI/CD Compatible: GitHub Actions does not handle application secrets — they are injected at runtime only
 
-**Deliverables Summary**
+**Deliverables Summary**:
  Secrets stored in AWS Secrets Manager
  Injected into ECS via environment variables
  Used securely in Flask application
  All managed through Terraform
 
-**Monitoring and Observability**
+**Monitoring and Observability**:
 
 To monitor the application health and performance, this project implements:
 AWS CloudWatch Logs for all container output from ECS tasks
 AWS CloudWatch Metrics for ECS service-level CPU usage
 An alert condition for high CPU utilization using CloudWatch Alarms
 
-**Logging Configuration**
+**Logging Configuration**:
 All ECS containers are configured to log to a centralized log group using the AWS awslogs driver in Terraform.
 
 **The task definition uses this log group:**
 Logs from stdout and stderr of your Flask app are sent here automatically.
 
-**CloudWatch Metrics + Alarm**
+**CloudWatch Metrics + Alarm**:
 We monitor CPU utilization of the ECS service and define an alarm if it goes above 80% for 2 consecutive minutes.
 
-**Notifications**
+**Notifications**:
 alarm can be connected to an SNS topic which can email DevOps or trigger automated remediation.
 
-**Summary**
+**Summary**:
 
  Application logs centralized via CloudWatch Logs
  ECS service CPU usage monitored via CloudWatch Metrics
  Alert condition defined (CPU > 80% for 2 min)
  Optional SNS notification configuration included
 
-**DEPLOYMENT TARGET**
+**DEPLOYMENT TARGET**:
 After pushing the image to ECR, the ECS service (provisioned by Terraform) automatically pulls the updated image and redeploys the container.
 
-**DELIVERABLES SUMMARY**
+**DELIVERABLES SUMMARY**:
 
  CI/CD pipeline file: .github/workflows/ci-cd.yml
  Secure secret injection via GitHub Secrets and Secrets Manager
@@ -131,33 +131,33 @@ After pushing the image to ECR, the ECS service (provisioned by Terraform) autom
  Docker image built and pushed to ECR
  Auto-deployment to ECS Fargate service
 
-**ASSUMPTIONS MADE **
+**ASSUMPTIONS MADE **:
 
 The application is not serving static assets, so no CDN or S3 integration was needed.
 Using Secrets Manager to store database credentials.
 CI/CD assumes that the branch name (main, dev, staging) aligns with environment names and ECR tags.
 Default VPC CIDRs and public subnets are sufficient for the test scope.
 
-**KNOWN LIMITATIONS ** 
+**KNOWN LIMITATIONS ** :
 
 ALB is configured for HTTP only (no HTTPS or ACM configured).
 No RDS Proxy implemented (optional for small applications).
 The database credentials are stored in AWS Secrets Manager but not rotated dynamically.
 Blue/Green deployments or Canary are not yet implemented.
 
-**REFLECTIONS**
+**REFLECTIONS**:
 
 Modular Terraform Code: Broke down infrastructure into modules for compute, network, IAM, etc., for reusability.
 Waitress Instead of Gunicorn: Chosen for cross-platform compatibility with Windows during local testing.
 GitHub Actions with Environment-Specific Logic: Dynamic tagging and conditional apply only on main.
 
-**WHY I MADE THESE DECISIONS**
+**WHY I MADE THESE DECISIONS**:
 
 Modularity and clarity enhance maintainability and allow easier environment cloning.
 Waitress works out of the box without Linux-only dependencies.
 CI/CD required secure automation, so dynamic ECR tagging, branch filtering, and Terraform state management were essential.
 
-**TRADE-OFFS CONSIDERED**
+**TRADE-OFFS CONSIDERED**:
 
 Using ECS Fargate simplified infrastructure at the cost of flexibility compared to EC2.
 Not implementing HTTPS offloads the complexity, but would be necessary for production.
