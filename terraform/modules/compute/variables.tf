@@ -61,7 +61,7 @@ variable "ecs_service_name" {
 variable "ecs_cluster_name" {
   type        = string
   default     = "devops-assessment-cluster"
-  description = "ECS cluster name to be used for scaling"
+  description = "ECS cluster name"
 }
 
 variable "min_capacity" {
