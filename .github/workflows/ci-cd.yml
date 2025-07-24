@@ -43,8 +43,10 @@ jobs:
 
       - name: Decode terraform.tfvars from secret
         run: |
+          mkdir -p terraform
           echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > terraform/${{ env.TFVARS_FILE }}
 
+          
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
