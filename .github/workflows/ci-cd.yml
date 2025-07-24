@@ -1,4 +1,4 @@
-name: Terraform CI/CD Pipeline
+name: Terraform + Flask App CI/CD Pipeline
 
 on:
   push:
@@ -11,7 +11,7 @@ env:
   TF_INPUT: false
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
 
     env:
@@ -22,6 +22,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Show working directory and files (debug)
+        run: |
+          pwd
+          ls -R
+
+      # Terraform setup
       - name: Set up Terraform
         run: |
           curl -o terraform.zip https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
@@ -36,18 +42,31 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region ${{ env.AWS_REGION }}
 
-      - name: Decode secrets.tfvars from base64
+      - name: Decode terraform.tfvars from base64
         run: echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > $TFVARS_FILE
 
+      # Terraform steps
       - name: Terraform Init
-        run: terraform -chdir=terraform init
+        run: terraform init
 
       - name: Terraform Format & Validate
-        run: terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate
+        run: terraform fmt -check && terraform validate
 
       - name: Terraform Plan
-        run: terraform -chdir=terraform plan -var-file=../${{ env.TFVARS_FILE }}
+        run: terraform plan -var-file=${{ env.TFVARS_FILE }}
 
       - name: Terraform Apply (only on push to main)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform -chdir=terraform apply -auto-approve -var-file=../${{ env.TFVARS_FILE }}
+        run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
+
+      # Flask app Docker build & test
+      - name: Build Flask App Docker Image
+        run: |
+          docker build -t flask-app ./app
+
+      - name: Run Flask App Container Test
+        run: |
+          docker run --rm -d -p 8080:8080 --name test-app flask-app
+          sleep 5
+          curl -f http://localhost:8080 || (echo "Flask app failed to respond" && exit 1)
+          docker stop test-app
