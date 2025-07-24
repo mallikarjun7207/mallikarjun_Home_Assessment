@@ -7,13 +7,9 @@ on:
     branches: [main, dev, staging]
 
 env:
-  TF_IN_AUTOMATION: true
-  TF_INPUT: false
   AWS_REGION: us-east-1
-  TFVARS_FILE: terraform.tfvars
   ECR_REPO: devops-app
-  IMAGE_TAG: latest
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  IMAGE_TAG: ${{ github.ref_name }}
 
 jobs:
   terraform:
@@ -42,7 +38,7 @@ jobs:
           echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > terraform/terraform.tfvars
 
       - name: Terraform format check
-        run: terraform fmt -recursive -check || exit 0
+        run: terraform fmt -recursive -check
 
       - name: Terraform Init
         working-directory: terraform
@@ -83,12 +79,15 @@ jobs:
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build Docker Image
         run: |
-          ECR_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}
-          docker buildx build --platform linux/amd64 -t $ECR_URI:${{ env.IMAGE_TAG }} ./app --load
+          docker build -t $ECR_REPO ./app
 
-      - name: Push Docker image to ECR
+      - name: Tag and Push Image to ECR
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          ECR_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}
-          docker push $ECR_URI:${{ env.IMAGE_TAG }}
+          ECR_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}
+          echo "Tagging image as $ECR_URI:$IMAGE_TAG"
+          docker tag $ECR_REPO $ECR_URI:$IMAGE_TAG
+          docker push $ECR_URI:$IMAGE_TAG
