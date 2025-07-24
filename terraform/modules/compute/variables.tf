@@ -44,6 +44,12 @@ variable "ecr_repo_url" {
   default     = "replace-this-with-your-ecr-url" # Optional override
 }
 
+variable "service_name" {
+  description = "Name of the ECS service"
+  type        = string
+}
+
+
 variable "ecs_service_name" {
   type        = string
   default     = "app-service"
