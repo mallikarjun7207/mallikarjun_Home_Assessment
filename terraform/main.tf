@@ -98,9 +98,9 @@ module "monitoring" {
 }
 
 module "ecr" {
-  source           = "./modules/ecr"
-  environment      = var.environment
-  ecr_repo_name    = var.ecr_repo_name
+  source        = "./modules/ecr"
+  environment   = var.environment
+  ecr_repo_name = var.ecr_repo_name
 }
 
 
