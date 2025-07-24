@@ -1,50 +1,50 @@
-name: Terraform + Flask App CI/CD Pipeline
+name: Terraform + Flask App CI/CD
 
 on:
   push:
     branches: [main, dev, staging]
   pull_request:
-    branches: [dev, staging]
+    branches: [main, dev, staging]
 
 env:
   TF_IN_AUTOMATION: true
   TF_INPUT: false
+  AWS_REGION: us-east-1
+  TFVARS_FILE: terraform.tfvars
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: us-east-1
-      TFVARS_FILE: terraform.tfvars
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Show working directory and files (debug)
+      - name: Debug: Show current directory tree
         run: |
-          pwd
+          echo "Working Directory: $PWD"
+          echo "Listing repo files:"
+          ls -al
+          echo "Full recursive listing:"
           ls -R
 
       - name: Set up Terraform
         run: |
           curl -o terraform.zip https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
-          [ -d terraform ] && rm -rf terraform
-          [ -f terraform ] && rm -f terraform
-          unzip terraform.zip
+          unzip -o terraform.zip
           sudo mv terraform /usr/local/bin/
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws configure set default.region ${{ env.AWS_REGION }}
+          aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws configure set default.region "${{ env.AWS_REGION }}"
 
-      - name: Decode terraform.tfvars from base64
-        run: echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > $TFVARS_FILE
+      - name: Decode terraform.tfvars from secret
+        run: |
+          mkdir -p terraform
+          echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > terraform/${{ env.TFVARS_FILE }}
 
-      # ✅ CORRECT Terraform paths
       - name: Terraform Init
         run: terraform -chdir=terraform init
 
@@ -52,20 +52,18 @@ jobs:
         run: terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate
 
       - name: Terraform Plan
-        run: terraform -chdir=terraform plan -var-file=../${{ env.TFVARS_FILE }}
+        run: terraform -chdir=terraform plan -var-file=${{ env.TFVARS_FILE }}
 
       - name: Terraform Apply (only on push to main)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform -chdir=terraform apply -auto-approve -var-file=../${{ env.TFVARS_FILE }}
+        run: terraform -chdir=terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
 
-      # ✅ CORRECT Docker build path
       - name: Build Flask App Docker Image
-        run: |
-          docker build -t flask-app ./app
+        run: docker build -t flask-app ./app
 
-      - name: Run Flask App Container Test
+      - name: Run Flask App Test
         run: |
           docker run --rm -d -p 8080:8080 --name test-app flask-app
           sleep 5
-          curl -f http://localhost:8080 || (echo "Flask app failed to respond" && exit 1)
+          curl -f http://localhost:8080 || (echo "App did not respond" && exit 1)
           docker stop test-app
