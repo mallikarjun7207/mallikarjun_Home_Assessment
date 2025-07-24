@@ -1,12 +1,23 @@
-FROM node:18-alpine AS base
+# Use slim Python base image
+FROM python:3.10-slim
+
+# Set working directory
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev
+
+# Copy dependency list and install them
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the app code
 COPY . .
 
-FROM node:18-alpine AS final
-WORKDIR /app
-COPY --from=base /app /app
-EXPOSE 3000
-ENV NODE_ENV=production
-CMD ["node", "index.js"]
+# Environment variables
+ENV ENVIRONMENT=production
+ENV APP_VERSION=1.0.0
+ENV PORT=8080
+
+# Expose the port
+EXPOSE 8080
+
+# Run the app using Waitress (production WSGI server)
+CMD ["python", "wsgi.py"]
