@@ -1,0 +1,24 @@
+region                 = "us-east-1"
+db_username            = "your_db_user"
+db_password            = "your_strong_password"
+container_image        = "your_ecr_image_url"
+ecs_cluster_name       = "your_cluster_name"
+ecs_execution_role_arn = "your_ecs_execution_role_arn"
+ecs_task_role_arn      = "your_ecs_task_role_arn"
+log_group_name         = "your_log_group_name"
+tg_arn                 = "your_target_group_arn"
+alb_log_bucket_prefix  = "alb"
+environment            = "dev"
+container_port         = 80
+instance_class         = "db.t3.micro"
+allocated_storage      = 20
+storage_type           = "gp2"
+engine                 = "mysql"
+engine_version         = "8.0"
+db_name                = "appdb"
+s3_bucket_name         = "your_s3_bucket_name"
+s3_versioning_enabled  = true
+service_name           = "your_service_name"
+
+backend_bucket_name    = "your_backend_bucket"
+backend_lock_table     = "your_backend_lock_table"

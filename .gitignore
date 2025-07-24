@@ -1,0 +1,23 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+terraform.tfvars.json
+crash.log
+.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.pyc
+
+# Docker
+*.log
+
+# VSCode/IDE
+.vscode/
+.idea/
+
+# System
+.DS_Store
+Thumbs.db
