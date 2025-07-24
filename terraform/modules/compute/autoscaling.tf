@@ -25,6 +25,6 @@ resource "aws_appautoscaling_policy" "scale_up" {
     scale_in_cooldown  = 60
     scale_out_cooldown = 60
 
-    
+
   }
 }

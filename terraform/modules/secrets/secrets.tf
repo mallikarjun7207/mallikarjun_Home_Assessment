@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "db_credentials" {
-   name = "dev_db_credentials_${var.environment}"
+  name       = "dev_db_credentials_${var.environment}"
   kms_key_id = aws_kms_key.secrets_key.arn
 }
 

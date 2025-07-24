@@ -8,7 +8,7 @@ resource "aws_db_subnet_group" "db_subnet_group" {
 }
 
 resource "aws_db_instance" "this" {
-  identifier              = "app-db"
+  identifier             = "app-db"
   allocated_storage      = var.allocated_storage
   storage_type           = var.storage_type
   engine                 = var.engine

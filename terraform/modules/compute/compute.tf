@@ -8,7 +8,7 @@ resource "aws_ecs_task_definition" "app" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn = var.ecs_task_role_arn
+  execution_role_arn       = var.ecs_task_role_arn
 
 
   container_definitions = jsonencode([
@@ -40,7 +40,7 @@ resource "aws_ecs_task_definition" "app" {
 
 
 resource "aws_ecs_service" "app" {
-  name            = "${var.service_name}-${var.environment}"  
+  name            = "${var.service_name}-${var.environment}"
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
