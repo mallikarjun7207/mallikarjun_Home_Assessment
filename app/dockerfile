@@ -1,12 +1,17 @@
-FROM node:18-alpine AS base
+# Use a slim Python base image
+FROM python:3.10-slim
+
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-FROM node:18-alpine AS final
-WORKDIR /app
-COPY --from=base /app /app
-EXPOSE 3000
-ENV NODE_ENV=production
-CMD ["node", "index.js"]
+ENV ENVIRONMENT=production
+ENV APP_VERSION=1.0.0
+ENV PORT=8080
+
+EXPOSE 8080
+
+CMD ["python", "app.py"]
