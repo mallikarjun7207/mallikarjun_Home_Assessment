@@ -1,83 +1,69 @@
-name: deploy
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - dev
+      - staging
+  pull_request:
+    branches:
+      - main
+      - dev
+      - staging
+
+env:
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
 
 jobs:
-  deploy:
+  terraform:
+    name: Terraform CI/CD
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: us-east-1
+      ENV_NAME: ${{ github.ref_name }}
+      TFVARS_FILE: terraform.tfvars
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Terraform
+        run: |
+          curl -o terraform.zip https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
+          unzip -o terraform.zip
+          sudo mv terraform /usr/local/bin/
 
-    - name: Install dependencies
-      run: pip install -r app/requirements.txt
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::553561694715:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Run unit tests
-      run: python -m unittest discover
+      - name: Decode .tfvars from Secret
+        run: |
+          echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > $TFVARS_FILE
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Terraform Init
+        run: terraform -chdir=terraform init
 
-    - name: Install Terraform
-      run: |
-        sudo apt-get update && sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
-        unzip terraform_1.5.7_linux_amd64.zip
-        sudo mv terraform /usr/local/bin/
-        terraform version
+      - name: Terraform Format & Validate
+        run: terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate
 
-    - name: Create terraform.tfvars
-      run: |
-        cat <<EOF > terraform/terraform.tfvars
-        region = "us-east-1"
-        db_username = "admin"
-        db_password = "StrongPassword123!"
-        container_image = "553561694715.dkr.ecr.us-east-1.amazonaws.com/devops-app:latest"
-        ecs_cluster_name = "devops-assessment-cluster"
-        ecs_execution_role_arn = "arn:aws:iam::553561694715:role/ecsTaskExecutionRole"
-        ecs_task_role_arn = "arn:aws:iam::553561694715:role/ecsTaskExecutionRole"
-        log_group_name = "/ecs/dev-app"
-        tg_arn = "arn:aws:elasticloadbalancing:us-east-1:553561694715:targetgroup/dev-app-tg/ef4d38018a5d6d47"
-        alb_log_bucket_prefix = "alb"
-        environment = "dev"
-        container_port = 80
-        instance_class = "db.t3.micro"
-        allocated_storage = 20
-        storage_type = "gp2"
-        engine = "mysql"
-        engine_version = "8.0"
-        db_name = "appdb"
-        s3_bucket_name = "default-devops-assets"
-        s3_versioning_enabled = true
-        service_name = "app-service"
-        backend_bucket_name = "devops-assessment-dev-tfstate"
-        backend_lock_table = "devops-assessment-dev-tf-lock"
-        EOF
+      - name: Terraform Plan
+        run: terraform -chdir=terraform plan -var-file=../${{ env.TFVARS_FILE }}
 
-    - name: Terraform Init
-      run: terraform init
-      working-directory: ./terraform
+      - name: Terraform Apply (only on main)
+        if: github.ref == 'refs/heads/main'
+        run: terraform -chdir=terraform apply -auto-approve -var-file=../${{ env.TFVARS_FILE }}
 
-    - name: Terraform Format & Validate
-      run: terraform fmt -check && terraform validate
-      working-directory: ./terraform
-
-    - name: Terraform Plan
-      run: terraform plan -var-file=terraform.tfvars
-      working-directory: ./terraform
-
-    - name: Terraform Apply
-      run: terraform apply -auto-approve -var-file=terraform.tfvars
-      working-directory: ./terraform
+      - name: Auto-unlock on Failure
+        if: failure()
+        run: |
+          terraform -chdir=terraform force-unlock -force $(terraform -chdir=terraform show -json | jq -r '.serial')
