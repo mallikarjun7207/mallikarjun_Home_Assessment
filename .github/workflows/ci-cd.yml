@@ -1,16 +1,10 @@
-name: CI/CD Pipeline
+name: Terraform CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - staging
+    branches: [main, dev, staging]
   pull_request:
-    branches:
-      - main
-      - dev
-      - staging
+    branches: [dev, staging]
 
 env:
   TF_IN_AUTOMATION: true
@@ -18,20 +12,14 @@ env:
 
 jobs:
   terraform:
-    name: Terraform CI/CD
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
 
     env:
       AWS_REGION: us-east-1
-      ENV_NAME: ${{ github.ref_name }}
       TFVARS_FILE: terraform.tfvars
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Terraform
@@ -42,15 +30,14 @@ jobs:
           unzip terraform.zip
           sudo mv terraform /usr/local/bin/
 
-      - name: Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::553561694715:role/github-actions-role
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Decode .tfvars from Secret
+      - name: Configure AWS credentials
         run: |
-          echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > $TFVARS_FILE
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ env.AWS_REGION }}
+
+      - name: Decode secrets.tfvars from base64
+        run: echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > $TFVARS_FILE
 
       - name: Terraform Init
         run: terraform -chdir=terraform init
@@ -61,11 +48,6 @@ jobs:
       - name: Terraform Plan
         run: terraform -chdir=terraform plan -var-file=../${{ env.TFVARS_FILE }}
 
-      - name: Terraform Apply (only on main)
-        if: github.ref == 'refs/heads/main'
+      - name: Terraform Apply (only on push to main)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform -chdir=terraform apply -auto-approve -var-file=../${{ env.TFVARS_FILE }}
-
-      - name: Auto-unlock on Failure
-        if: failure()
-        run: |
-          terraform -chdir=terraform force-unlock -force $(terraform -chdir=terraform show -json | jq -r '.serial')
