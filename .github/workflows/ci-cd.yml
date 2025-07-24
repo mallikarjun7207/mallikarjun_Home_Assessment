@@ -20,13 +20,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Debug - list directory contents
+      - name: Debug - Show directory structure
         run: |
-          echo "Current directory:"
-          pwd
-          echo "Repo structure:"
+          echo "Root contents:"
           ls -al
-          ls -R terraform || echo "terraform/ folder missing"
+          echo "Terraform contents:"
+          ls -al terraform || echo "terraform folder missing"
 
       - name: Set up Terraform
         run: |
@@ -46,7 +45,6 @@ jobs:
           mkdir -p terraform
           echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > terraform/${{ env.TFVARS_FILE }}
 
-          
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
@@ -73,5 +71,5 @@ jobs:
         run: |
           docker run --rm -d -p 8080:8080 --name test-app flask-app
           sleep 5
-          curl -f http://localhost:8080/ || (echo "App failed health check" && exit 1)
+          curl -f http://localhost:8080/health || (echo "Health check failed" && exit 1)
           docker stop test-app
