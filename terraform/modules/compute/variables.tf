@@ -45,9 +45,11 @@ variable "ecr_repo_url" {
 }
 
 variable "service_name" {
-  description = "Name of the ECS service"
   type        = string
+  default     = "app-service"
+  description = "Name of the ECS service"
 }
+
 
 
 variable "ecs_service_name" {
@@ -113,6 +115,6 @@ variable "secrets_name" {
 }
 
 variable "tg_arn" {
-  description = "ARN of the IAM role for ECS task execution"
+  description = "ARN of the target group"
   type        = string
 }

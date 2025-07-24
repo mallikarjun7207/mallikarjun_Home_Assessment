@@ -113,10 +113,11 @@ variable "s3_versioning_enabled" {
 }
 
 variable "service_name" {
-  description = "Name of the ECS service"
   type        = string
-
+  default     = "app-service"
+  description = "Name of the ECS service"
 }
+
 
 variable "tg_arn" {
   description = "ARN of the target group"
