@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPO: devops-app
-  IMAGE_TAG: ${{ github.ref_name }}
+  IMAGE_TAG: ${{ github.ref_name }} # Tags image with branch name (e.g., main, dev)
 
 jobs:
   terraform:
@@ -76,6 +76,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Get AWS Account ID
+        id: aws-account
+        run: |
+          echo "ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
@@ -84,10 +89,7 @@ jobs:
           docker build -t $ECR_REPO ./app
 
       - name: Tag and Push Image to ECR
-        env:
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          ECR_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}
-          echo "Tagging image as $ECR_URI:$IMAGE_TAG"
+          ECR_URI=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}
           docker tag $ECR_REPO $ECR_URI:$IMAGE_TAG
           docker push $ECR_URI:$IMAGE_TAG
