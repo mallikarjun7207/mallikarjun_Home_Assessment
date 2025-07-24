@@ -45,24 +45,24 @@ jobs:
       - name: Decode terraform.tfvars from base64
         run: echo "${{ secrets.TFVARS_BASE64 }}" | base64 -d > $TFVARS_FILE
 
-      # Terraform steps with correct working directory
+      # Terraform commands from Assessment/terraform
       - name: Terraform Init
-        run: terraform -chdir=terraform init
+        run: terraform -chdir=Assessment/terraform init
 
       - name: Terraform Format & Validate
-        run: terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate
+        run: terraform -chdir=Assessment/terraform fmt -check && terraform -chdir=Assessment/terraform validate
 
       - name: Terraform Plan
-        run: terraform -chdir=terraform plan -var-file=../${{ env.TFVARS_FILE }}
+        run: terraform -chdir=Assessment/terraform plan -var-file=../../${{ env.TFVARS_FILE }}
 
       - name: Terraform Apply (only on push to main)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform -chdir=terraform apply -auto-approve -var-file=../${{ env.TFVARS_FILE }}
+        run: terraform -chdir=Assessment/terraform apply -auto-approve -var-file=../../${{ env.TFVARS_FILE }}
 
       # Flask app Docker build & test
       - name: Build Flask App Docker Image
         run: |
-          docker build -t flask-app ./app
+          docker build -t flask-app ./Assessment/app
 
       - name: Run Flask App Container Test
         run: |
