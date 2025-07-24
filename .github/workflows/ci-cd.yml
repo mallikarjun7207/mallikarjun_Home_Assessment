@@ -20,9 +20,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Debug: Show directory structure
+      - name: Debug - show directory contents
         run: |
-          echo "Working Directory: $PWD"
+          echo "Current directory: $PWD"
           ls -al
           ls -R
 
@@ -54,11 +54,11 @@ jobs:
       - name: Terraform Plan
         run: terraform -chdir=terraform plan -var-file=${{ env.TFVARS_FILE }}
 
-      - name: Terraform Apply (only on push to main)
+      - name: Terraform Apply (main only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform -chdir=terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
 
-      - name: Build Flask App Docker Image
+      - name: Build Docker Image for Flask App
         run: docker build -t flask-app ./app
 
       - name: Run Flask App Test
