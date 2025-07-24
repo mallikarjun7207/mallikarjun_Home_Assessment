@@ -5,7 +5,5 @@ resource "aws_ecr_repository" "this" {
     scan_on_push = true
   }
 
-  tags = {
-    Environment = var.environment
-  }
+  image_tag_mutability = "MUTABLE"
 }

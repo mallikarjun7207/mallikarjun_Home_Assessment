@@ -53,7 +53,7 @@ variable "ecs_task_role_arn" {
 
 
 variable "environment" {
-  description = "Deployment environment"
+  description = "Environment name"
   type        = string
 
 }
@@ -123,6 +123,12 @@ variable "tg_arn" {
   description = "ARN of the target group"
   type        = string
 }
+
+variable "ecr_repo_name" {
+  type        = string
+  description = "Name of the ECR repository"
+}
+
 
 ############### BACKEND ###############
 
