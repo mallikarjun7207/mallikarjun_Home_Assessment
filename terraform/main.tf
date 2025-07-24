@@ -97,3 +97,10 @@ module "monitoring" {
   security_groups       = [module.network.alb_sg_id]
 }
 
+module "ecr" {
+  source         = "./modules/ecr"
+  environment    = var.environment
+  ecr_repo_name  = "devops-app"
+}
+
+

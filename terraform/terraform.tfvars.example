@@ -22,3 +22,5 @@ service_name           = "your_service_name"
 
 backend_bucket_name    = "your_backend_bucket"
 backend_lock_table     = "your_backend_lock_table"
+ecr_repo_name          = "devops-app"
+
